@@ -17,3 +17,9 @@ class GlobalGitActions():
             print(branch_name + " exists, pulling")
             Repo(path=git_path).remotes.origin.fetch()
             Repo(path=git_path).remotes.origin.pull()
+
+    @staticmethod
+    def get_remote_branches():
+        remotes = Repo(Config.gitpath_with_master).git.branch('-r').split('\n')
+        remotes.pop()
+        return [remote.split('/')[-1] for remote in remotes]

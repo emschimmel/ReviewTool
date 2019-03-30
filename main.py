@@ -27,16 +27,10 @@ class MainClass(GlobalGitActions):
             self.reviews.append(review)
 
     def checkoutAndPullBranches(self):
-        missing_branches = set(self.__get_remote_branches()).difference(self.available_directories)
+        missing_branches = set(GlobalGitActions.get_remote_branches()).difference(self.available_directories)
         for branch_name in missing_branches:
             GlobalGitActions.git_clone_or_pull(Config.gitpath+"/"+branch_name, branch_name)
             self.available_directories.append(branch_name)
-
-    @staticmethod
-    def __get_remote_branches():
-        remotes = Repo(Config.gitpath_with_master).git.branch('-r').split('\n')
-        remotes.pop()
-        return [remote.split('/')[-1] for remote in remotes]
 
     @staticmethod
     def get_files(branch):

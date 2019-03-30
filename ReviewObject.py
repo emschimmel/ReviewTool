@@ -1,3 +1,4 @@
+from datetime import datetime
 
 class ReviewObject(object):
     time = ""
@@ -9,7 +10,7 @@ class ReviewObject(object):
     non_kotlin_or_text_files = []
 
     def __init__(self):
-        self.time = ""
+        self.time = datetime.now()
         self.branch = ""
         self.badlines = []
         self.warninglines = []
@@ -18,6 +19,7 @@ class ReviewObject(object):
         self.non_kotlin_or_text_files = []
 
     def print_object(self):
+        print("moment: "+self.time.__str__())
         print("branch: "+self.branch)
         print("kotlin files")
         print(self.kotlin_files)
