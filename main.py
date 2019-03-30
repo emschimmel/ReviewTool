@@ -2,46 +2,50 @@
 import os
 from git import Repo
 
+from ReviewObject import ReviewObject
 from config import Config
+from global_git_actions import GlobalGitActions
 
-class MainClass():
+
+class MainClass(GlobalGitActions):
 
     available_directories = []
+    reviews = []
 
     def __init__(self):
-        if not os.path.exists(Config.gitpath_with_master):
-            os.makedirs(Config.gitpath_with_master)
-            Repo.clone_from(Config.git_url, Config.gitpath_with_master)
+        GlobalGitActions.git_clone_or_pull(Config.gitpath_with_master, Config.git_base_branch)
         self.run()
 
     def run(self):
         self.checkoutAndPullBranches()
-        non_kotlin_or_text_files, kotlin_files = self.get_files()
-        badlines, warninglines, complimentlines = self.check_kotlin_files(kotlin_files)
-        print(badlines)
-        print(warninglines)
-        print(complimentlines)
+        for branch in self.available_directories:
+            review = ReviewObject()
+            review.branch = branch
+            review.non_kotlin_or_text_files, review.kotlin_files = self.get_files(branch)
+            review.badlines, review.warninglines, review.complimentlines = self.check_kotlin_files(review.kotlin_files)
+            review.print_object()
+            self.reviews.append(review)
 
     def checkoutAndPullBranches(self):
-        missing_branches = set([h.name for h in Repo(Config.gitpath_with_master).heads]).difference(self.available_directories)
-        print(missing_branches)
+        missing_branches = set(self.__get_remote_branches()).difference(self.available_directories)
         for branch_name in missing_branches:
-            if not os.path.exists(Config.gitpath+"/"+branch_name):
-                print(branch_name+" doesn't exists, creating")
-                Repo.clone_from(url=Config.git_url, to_path=Config.gitpath+"/"+branch_name, branch=branch_name)
-            else:
-                print(branch_name + " exists, pulling")
-                Repo(path=Config.gitpath+"/"+branch_name).remotes.origin.pull()
+            GlobalGitActions.git_clone_or_pull(Config.gitpath+"/"+branch_name, branch_name)
             self.available_directories.append(branch_name)
 
+    @staticmethod
+    def __get_remote_branches():
+        remotes = Repo(Config.gitpath_with_master).git.branch('-r').split('\n')
+        remotes.pop()
+        return [remote.split('/')[-1] for remote in remotes]
 
     @staticmethod
-    def get_files():
+    def get_files(branch):
         kotlin_files = []
         non_kotlin_or_text_files = []
-        for root, dirs, files in os.walk(Config.gitpath):
-            [kotlin_files.append(os.path.join(root, file)) for file in files if file.endswith(".kt")]
-            [non_kotlin_or_text_files.append(file) for file in files if not file.endswith(".kt") and not file.endswith(".txt") and not file.endswith(".yml")]
+        for root, dirs, files in os.walk(Config.gitpath+"/"+branch):
+            if not any(word in root for word in Config.directories_to_ignore):
+                [kotlin_files.append(os.path.join(root, file)) for file in files if file.endswith(".kt")]
+                [non_kotlin_or_text_files.append(file) for file in files if not file.split('.')[-1] in Config.allowed_file_extentions]
         return non_kotlin_or_text_files, kotlin_files
 
     @classmethod
@@ -49,9 +53,7 @@ class MainClass():
         badlines = {}
         warninglines = {}
         complimentlines = {}
-        print(kotlin_files)
         for file in kotlin_files:
-            print(file)
             with open(file, "r") as fp:
                 for index, line in enumerate(fp):
                     badlines = self.__add_to_collection(config_collection=Config.bad_words, collection=badlines, file=file, index=index, line=line)
