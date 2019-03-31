@@ -16,6 +16,7 @@ class MainClass(GlobalGitActions):
         GlobalGitActions.git_clone_or_pull(Config.gitpath_with_master, Config.git_base_branch)
         self.run()
 
+    @classmethod
     def run(self):
         self.checkoutAndPullBranches()
         for branch in self.available_directories:
@@ -26,6 +27,7 @@ class MainClass(GlobalGitActions):
             review.print_object()
             self.reviews.append(review)
 
+    @classmethod
     def checkoutAndPullBranches(self):
         missing_branches = set(GlobalGitActions.get_remote_branches()).difference(self.available_directories)
         for branch_name in missing_branches:
@@ -42,31 +44,20 @@ class MainClass(GlobalGitActions):
                 [non_kotlin_or_text_files.append(file) for file in files if not file.split('.')[-1] in Config.allowed_file_extentions]
         return non_kotlin_or_text_files, kotlin_files
 
-    @classmethod
-    def check_kotlin_files(self, kotlin_files):
+    @staticmethod
+    def check_kotlin_files(kotlin_files):
         badlines = {}
         warninglines = {}
         complimentlines = {}
         for file in kotlin_files:
             with open(file, "r") as fp:
                 for index, line in enumerate(fp):
-                    badlines = self.__add_to_collection(config_collection=Config.bad_words, collection=badlines, file=file, index=index, line=line)
-                    warninglines = self.__add_to_collection(config_collection=Config.warning_words, collection=warninglines, file=file, index=index, line=line)
-                    complimentlines = self.__add_to_collection(config_collection=Config.compliment_words, collection=complimentlines, file=file, index=index, line=line)
+                    badlines = GlobalGitActions._add_to_collection(config_collection=Config.bad_words, collection=badlines, file=file, index=index, line=line)
+                    warninglines = GlobalGitActions._add_to_collection(config_collection=Config.warning_words, collection=warninglines, file=file, index=index, line=line)
+                    complimentlines = GlobalGitActions._add_to_collection(config_collection=Config.compliment_words, collection=complimentlines, file=file, index=index, line=line)
         return badlines, warninglines, complimentlines
 
-    @staticmethod
-    def __add_to_collection(config_collection, collection, file, index, line):
-        for word in config_collection:
-            if word in line:
-                if file in collection:
-                    collection[file].append([index, word])
-                else:
-                    collection[file] = [[index, word]]
-        return collection
 
-    def value_non_kotlin_files_by_extention(self, non_kotlin_files):
-        pass
 
 
 if __name__ == '__main__':
