@@ -59,6 +59,6 @@ class DiffClass(GlobalGitActions):
         #     print("B blob:\n{}".format(diff_item.b_blob.data_stream.read().decode('utf-8')))
 
 if __name__ == '__main__':
-    branch_origin = "master"
-    branch_to_compair = "develop"
+    branch_origin = "develop"
+    branch_to_compair = "feature/31699"
     DiffClass(branch_origin, branch_to_compair)
